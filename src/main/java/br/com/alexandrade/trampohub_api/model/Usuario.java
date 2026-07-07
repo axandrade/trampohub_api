@@ -1,5 +1,6 @@
 package br.com.alexandrade.trampohub_api.model;
 
+import br.com.alexandrade.trampohub_api.enums.TipoUsuario;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;

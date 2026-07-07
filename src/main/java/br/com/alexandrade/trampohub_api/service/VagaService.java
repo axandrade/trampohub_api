@@ -8,7 +8,7 @@ import br.com.alexandrade.trampohub_api.dto.VagaRequest;
 import br.com.alexandrade.trampohub_api.dto.VagaResponse;
 import br.com.alexandrade.trampohub_api.exception.FieldValidationException;
 import br.com.alexandrade.trampohub_api.exception.ResourceNotFoundException;
-import br.com.alexandrade.trampohub_api.model.TipoUsuario;
+import br.com.alexandrade.trampohub_api.enums.TipoUsuario;
 import br.com.alexandrade.trampohub_api.model.Usuario;
 import br.com.alexandrade.trampohub_api.model.Vaga;
 import br.com.alexandrade.trampohub_api.repository.VagaRepository;

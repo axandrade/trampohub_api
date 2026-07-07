@@ -3,8 +3,8 @@ package br.com.alexandrade.trampohub_api.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import br.com.alexandrade.trampohub_api.model.Modalidade;
-import br.com.alexandrade.trampohub_api.model.TipoContrato;
+import br.com.alexandrade.trampohub_api.enums.Modalidade;
+import br.com.alexandrade.trampohub_api.enums.TipoContrato;
 import br.com.alexandrade.trampohub_api.model.Vaga;
 
 public record VagaResponse(String id, String titulo, String descricao, String empresa, String localizacao,

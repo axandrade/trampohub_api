@@ -2,6 +2,7 @@ package br.com.alexandrade.trampohub_api.model;
 
 import java.time.Instant;
 
+import br.com.alexandrade.trampohub_api.enums.StatusCandidatura;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;

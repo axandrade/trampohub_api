@@ -3,6 +3,8 @@ package br.com.alexandrade.trampohub_api.model;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import br.com.alexandrade.trampohub_api.enums.Modalidade;
+import br.com.alexandrade.trampohub_api.enums.TipoContrato;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
