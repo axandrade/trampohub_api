@@ -36,7 +36,7 @@ public class AuthController {
     public ResponseEntity<MensagemResponse> cadastro(@RequestParam String username,
                                                        @RequestParam String password,
                                                        @RequestParam String tipo,
-                                                       @RequestParam(required = false) String nomeEmpresa,
+                                                       @RequestParam(name = "nome_empresa", required = false) String nomeEmpresa,
                                                        @RequestParam(required = false) MultipartFile foto,
                                                        @RequestParam(required = false) String email) {
         authService.cadastrar(username, password, tipo, nomeEmpresa, foto, email);
@@ -53,7 +53,7 @@ public class AuthController {
     public PerfilResponse editarPerfil(@AuthenticationPrincipal Usuario usuario,
                                         @RequestParam(required = false) String username,
                                         @RequestParam(required = false) String email,
-                                        @RequestParam(required = false) String nomeEmpresa,
+                                        @RequestParam(name = "nome_empresa", required = false) String nomeEmpresa,
                                         @RequestParam(required = false) MultipartFile foto,
                                         @RequestParam(required = false) String senhaAtual,
                                         @RequestParam(required = false) String novaSenha) {
