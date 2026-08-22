@@ -2,6 +2,8 @@ package br.com.alexandrade.trampohub_api.controller;
 
 import java.util.List;
 
+import br.com.alexandrade.trampohub_api.event.CandidaturaEvent;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,9 +25,12 @@ import br.com.alexandrade.trampohub_api.service.CandidaturaService;
 public class CandidaturaController {
 
     private final CandidaturaService candidaturaService;
+    private final RabbitTemplate rabbitTemplate;
 
-    public CandidaturaController(CandidaturaService candidaturaService) {
+    public CandidaturaController(CandidaturaService candidaturaService,
+                                 RabbitTemplate rabbitTemplate) {
         this.candidaturaService = candidaturaService;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @GetMapping("/api/candidaturas/")
@@ -39,9 +44,29 @@ public class CandidaturaController {
     }
 
     @PostMapping("/api/candidaturas/")
-    public ResponseEntity<CandidaturaResponse> criar(@RequestBody CandidaturaRequest request,
-                                                       @AuthenticationPrincipal Usuario usuario) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(candidaturaService.criar(request, usuario));
+    public ResponseEntity<?> criar(@RequestBody CandidaturaRequest request,
+                                   @AuthenticationPrincipal Usuario usuario) {
+
+        // 1. CRIA o evento COM DADOS SIMPLES
+        CandidaturaEvent evento = new CandidaturaEvent(
+                request,
+                usuario.getId(),
+                usuario.getEmail(),
+                usuario.getUsername()
+        );
+
+        // 2. ENVIA para RabbitMQ
+        rabbitTemplate.convertAndSend(
+                "candidatura-exchange",
+                "candidatura.criada",
+                evento
+        );
+
+        // 3. RETORNA LOGO
+        return ResponseEntity.accepted()
+                .body(new Object() {
+                    public String mensagem = "Candidatura recebida! Processaremos em breve.";
+                });
     }
 
     @PutMapping("/api/candidaturas/{id}/")
