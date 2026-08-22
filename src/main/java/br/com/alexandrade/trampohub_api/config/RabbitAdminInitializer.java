@@ -16,8 +16,8 @@ public class RabbitAdminInitializer {
 
     @PostConstruct
     public void initializeRabbitMQ() {
-        System.out.println("🐰 Inicializando RabbitMQ...");
+        System.out.println("Inicializando RabbitMQ...");
         rabbitAdmin.purgeQueue("candidatura-criada-queue");
-        System.out.println("✅ RabbitMQ inicializado com sucesso!");
+        System.out.println("RabbitMQ inicializado com sucesso!");
     }
 }
