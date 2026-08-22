@@ -75,18 +75,26 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-amqp</artifactId>
 		</dependency>
-		<!-- Testcontainers para RabbitMQ -->
+		<!-- Testcontainers para RabbitMQ (versao fixa: junit-jupiter/rabbitmq ainda nao tem
+		     release na linha 2.x gerenciada pelo Boot, entao pinamos os 3 modulos juntos) -->
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
-			<version>1.19.7</version>
+			<version>1.21.4</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>1.21.4</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>rabbitmq</artifactId>
-			<version>1.19.7</version>
+			<version>1.21.4</version>
 			<scope>test</scope>
 		</dependency>
 

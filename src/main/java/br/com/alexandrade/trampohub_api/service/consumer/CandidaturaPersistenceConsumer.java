@@ -21,6 +21,7 @@ public class CandidaturaPersistenceConsumer {
     public void salvarCandidatura(CandidaturaEvent evento) {
         try {
             System.out.println("[Consumer 1] Salvando candidatura...");
+            Thread.sleep(5000);
 
             CandidaturaRequest request = evento.getRequest();
 
