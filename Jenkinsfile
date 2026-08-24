@@ -41,9 +41,6 @@ pipeline {
         }
 
         stage('Deploy Homolog') {
-            when {
-                branch 'develop'
-            }
             steps {
                 echo 'Fazendo deploy em homolog...'
                 sh '''
