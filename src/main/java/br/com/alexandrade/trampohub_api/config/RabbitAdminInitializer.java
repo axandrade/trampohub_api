@@ -1,11 +1,13 @@
 package br.com.alexandrade.trampohub_api.config;
 
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 
 @Component
+@Profile("!test")
 public class RabbitAdminInitializer {
 
     private final RabbitAdmin rabbitAdmin;
