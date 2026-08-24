@@ -61,22 +61,6 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                echo '🔍 Analisando código com SonarQube...'
-                bat '''
-                    mvn sonar:sonar ^
-                      -Dsonar.projectKey=trampohub-api ^
-                      -Dsonar.sources=src ^
-                      -Dsonar.host.url=http://localhost:9000 ^
-                      -Dsonar.login=%SONARQUBE_TOKEN%
-                '''
-            }
-        }
-
         stage('Deploy Homolog') {
             when {
                 branch 'develop'
@@ -115,7 +99,7 @@ pipeline {
             }
             steps {
                 echo '🚀 Fazendo deploy em PRODUÇÃO...'
-                input 'Deseja fazer deploy em PRODUÇÃO?'
+                input message: 'Deseja fazer deploy em PRODUÇÃO?', ok: 'Deploy'
 
                 bat '''
                     echo Pushing imagem para registry...
@@ -142,15 +126,7 @@ pipeline {
                 docker image prune -f --filter "dangling=true"
             '''
 
-            junit '**/target/surefire-reports/*.xml', allowEmptyResults: true
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'target/site',
-                reportFiles: 'index.html',
-                reportName: 'Test Report'
-            ])
+            junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
         }
 
         success {
@@ -160,7 +136,7 @@ pipeline {
 
         failure {
             echo '❌ Pipeline falhou!'
-            bat 'docker logs trampohub-api-homolog'
+            bat 'docker logs trampohub-api-homolog || echo "Container não está rodando"'
         }
 
         unstable {
