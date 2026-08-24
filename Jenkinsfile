@@ -8,11 +8,9 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME     = "trampohub-api"
-        IMAGE_TAG      = "${BUILD_NUMBER}"
-        APP_PORT       = "8001"
-        DOCKER_NETWORK = "trampohub-net"
-        MONGO_URI      = "mongodb://admin:trampohub123@mongo-homolog:27017/trampohub_java_homolog?authSource=admin"
+        IMAGE_NAME = "trampohub-api"
+        IMAGE_TAG  = "${BUILD_NUMBER}"
+        APP_PORT   = "8001"
     }
 
     stages {
@@ -54,15 +52,12 @@ pipeline {
 
                     docker run -d \
                       --name trampohub-api-homolog \
-                      --network ${DOCKER_NETWORK} \
+                      --add-host=host.docker.internal:host-gateway \
                       -p ${APP_PORT}:${APP_PORT} \
                       -e SPRING_PROFILES_ACTIVE=homolog \
-                      -e SERVER_PORT=${APP_PORT} \
-                      -e SPRING_DATA_MONGODB_URI=${MONGO_URI} \
-                      -e SPRING_RABBITMQ_HOST=rabbitmq-homolog \
-                      -e SPRING_RABBITMQ_PORT=5672 \
-                      -e SPRING_RABBITMQ_USERNAME=guest \
-                      -e SPRING_RABBITMQ_PASSWORD=guest \
+                      -e MONGO_HOST=host.docker.internal \
+                      -e MONGO_PASSWORD=trampohub123 \
+                      -e RABBITMQ_HOST=host.docker.internal \
                       --restart unless-stopped \
                       ${IMAGE_NAME}:${IMAGE_TAG}
 
@@ -80,7 +75,7 @@ pipeline {
         }
 
         success {
-            echo "Deploy concluído — http://localhost:${APP_PORT}"
+            echo "Deploy concluído — http://localhost:8001"
         }
 
         failure {
