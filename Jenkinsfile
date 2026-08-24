@@ -14,6 +14,7 @@ pipeline {
         MONGO_HOST = "host.docker.internal"
         RABBITMQ_HOST = "host.docker.internal"
         SPRING_PORT = "8001"
+        CONTAINER_PORT = "8081"
     }
 
     stages {
@@ -27,37 +28,26 @@ pipeline {
         stage('Build Maven') {
             steps {
                 echo '🔨 Compilando com Maven...'
-                bat '''
-                    mvn clean package -DskipTests ^
-                        -Dmaven.test.skip=true ^
-                        -Dorg.slf4j.simpleLogger.defaultLogLevel=info
-                '''
+                sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('Unit Tests') {
             steps {
                 echo '🧪 Rodando testes unitários...'
-                bat '''
-                    mvn test ^
-                        -Dorg.slf4j.simpleLogger.defaultLogLevel=info
-                '''
+                sh 'mvn test'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo '🐳 Construindo imagem Docker...'
-                bat '''
-                    docker build ^
-                      --build-arg BUILD_NUMBER=%BUILD_NUMBER% ^
-                      -t %IMAGE_NAME%:%IMAGE_TAG% ^
-                      -t %IMAGE_NAME%:latest ^
+                sh '''
+                    docker build \
+                      -t ${IMAGE_NAME}:${IMAGE_TAG} \
+                      -t ${IMAGE_NAME}:latest \
                       .
                 '''
-                script {
-                    echo "✅ Imagem construída: ${IMAGE_NAME}:${IMAGE_TAG}"
-                }
             }
         }
 
@@ -67,49 +57,31 @@ pipeline {
             }
             steps {
                 echo '🚀 Fazendo deploy em homolog...'
-                bat '''
-                    echo Parando container anterior...
-                    for /f %%i in ('docker ps -q -f name=trampohub-api-homolog') do docker stop %%i
-                    for /f %%i in ('docker ps -aq -f name=trampohub-api-homolog') do docker rm %%i
+                sh '''
+                    echo "=== Parando container anterior ==="
+                    docker stop trampohub-api-homolog || true
+                    docker rm trampohub-api-homolog || true
 
-                    echo Iniciando novo container...
-                    docker run -d ^
-                      --name trampohub-api-homolog ^
-                      -p %SPRING_PORT%:8080 ^
-                      -e SPRING_PROFILES_ACTIVE=homolog ^
-                      -e SPRING_DATA_MONGODB_URI=mongodb://admin:trampohub123@%MONGO_HOST%:27017/trampohub?authSource=admin ^
-                      -e SPRING_RABBITMQ_HOST=%RABBITMQ_HOST% ^
-                      -e SPRING_RABBITMQ_PORT=5672 ^
-                      -e SPRING_RABBITMQ_USERNAME=guest ^
-                      -e SPRING_RABBITMQ_PASSWORD=guest ^
-                      -e JAVA_OPTS=-Xmx512m -Xms256m ^
-                      --restart unless-stopped ^
-                      %IMAGE_NAME%:%IMAGE_TAG%
+                    echo "=== Iniciando novo container ==="
+                    docker run -d \
+                      --name trampohub-api-homolog \
+                      -p ${SPRING_PORT}:${CONTAINER_PORT} \
+                      -e SPRING_PROFILES_ACTIVE=homolog \
+                      -e SERVER_PORT=${CONTAINER_PORT} \
+                      -e SPRING_DATA_MONGODB_URI=mongodb://admin:trampohub123@${MONGO_HOST}:27017/trampohub?authSource=admin \
+                      -e SPRING_RABBITMQ_HOST=${RABBITMQ_HOST} \
+                      -e SPRING_RABBITMQ_PORT=5672 \
+                      -e SPRING_RABBITMQ_USERNAME=guest \
+                      -e SPRING_RABBITMQ_PASSWORD=guest \
+                      --restart unless-stopped \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
 
-                    timeout /t 5 /nobreak
-                    echo Verificando saúde do container...
+                    sleep 5
                     docker logs trampohub-api-homolog
-                '''
-            }
-        }
 
-        stage('Deploy Production') {
-            when {
-                branch 'main'
-            }
-            steps {
-                echo '🚀 Fazendo deploy em PRODUÇÃO...'
-                input message: 'Deseja fazer deploy em PRODUÇÃO?', ok: 'Deploy'
-
-                bat '''
-                    echo Pushing imagem para registry...
-                    docker tag %IMAGE_NAME%:%IMAGE_TAG% %DOCKER_REGISTRY%/%IMAGE_NAME%:%IMAGE_TAG%
-                    docker tag %IMAGE_NAME%:latest %DOCKER_REGISTRY%/%IMAGE_NAME%:latest
-
-                    REM Fazer login e push (se usar registry privado)
-                    REM docker login -u %DOCKER_USER% -p %DOCKER_PASSWORD%
-                    REM docker push %DOCKER_REGISTRY%/%IMAGE_NAME%:%IMAGE_TAG%
-                    REM docker push %DOCKER_REGISTRY%/%IMAGE_NAME%:latest
+                    echo ""
+                    echo "✅ API: http://localhost:${SPRING_PORT}/api"
+                    echo "✅ Health: http://localhost:${SPRING_PORT}/api/actuator/health"
                 '''
             }
         }
@@ -117,30 +89,17 @@ pipeline {
 
     post {
         always {
-            echo '🧹 Limpando recursos...'
-            bat '''
-                echo Exibindo logs do container...
-                docker logs trampohub-api-homolog || echo "Container não existe ou já foi removido"
-
-                echo Limpando imagens dangling...
-                docker image prune -f --filter "dangling=true"
-            '''
-
+            sh 'docker image prune -f --filter "dangling=true" || true'
             junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
         }
 
         success {
             echo '✅ Pipeline executado com sucesso!'
-            bat 'docker ps -f name=trampohub-api-homolog --format="table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
         }
 
         failure {
             echo '❌ Pipeline falhou!'
-            bat 'docker logs trampohub-api-homolog || echo "Container não está rodando"'
-        }
-
-        unstable {
-            echo '⚠️ Pipeline instável (testes falharam)'
+            sh 'docker logs trampohub-api-homolog || echo "Container não está rodando"'
         }
     }
 }
