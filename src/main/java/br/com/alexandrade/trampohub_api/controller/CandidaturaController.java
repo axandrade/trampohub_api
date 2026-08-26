@@ -1,25 +1,22 @@
 package br.com.alexandrade.trampohub_api.controller;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 
 import br.com.alexandrade.trampohub_api.event.CandidaturaEvent;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import br.com.alexandrade.trampohub_api.dto.CandidaturaRequest;
 import br.com.alexandrade.trampohub_api.dto.CandidaturaResponse;
 import br.com.alexandrade.trampohub_api.model.Usuario;
 import br.com.alexandrade.trampohub_api.service.CandidaturaService;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 public class CandidaturaController {
@@ -27,10 +24,14 @@ public class CandidaturaController {
     private final CandidaturaService candidaturaService;
     private final RabbitTemplate rabbitTemplate;
 
+    private final KafkaTemplate<String, CandidaturaEvent> kafkaTemplate;  // ← Declare
+
     public CandidaturaController(CandidaturaService candidaturaService,
-                                 RabbitTemplate rabbitTemplate) {
+                                 RabbitTemplate rabbitTemplate,
+                                 KafkaTemplate<String, CandidaturaEvent> kafkaTemplate) {
         this.candidaturaService = candidaturaService;
         this.rabbitTemplate = rabbitTemplate;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     @GetMapping("/api/candidaturas/")
@@ -47,7 +48,6 @@ public class CandidaturaController {
     public ResponseEntity<?> criar(@RequestBody CandidaturaRequest request,
                                    @AuthenticationPrincipal Usuario usuario) {
 
-        // 1. CRIA o evento COM DADOS SIMPLES
         CandidaturaEvent evento = new CandidaturaEvent(
                 request,
                 usuario.getId(),
@@ -55,18 +55,50 @@ public class CandidaturaController {
                 usuario.getUsername()
         );
 
-        // 2. ENVIA para RabbitMQ
         rabbitTemplate.convertAndSend(
                 "candidatura-exchange",
                 "candidatura.criada",
                 evento
         );
 
-        // 3. RETORNA LOGO
         return ResponseEntity.accepted()
                 .body(new Object() {
                     public String mensagem = "Candidatura recebida! Processaremos em breve.";
                 });
+    }
+
+    @PostMapping("/api/candidaturas/com-curriculo")
+    public ResponseEntity<?> candidatarComCurriculo(
+            @RequestParam("vagaId") String vagaId,
+            @RequestParam("file") MultipartFile curriculo,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        try {
+            if (curriculo.getSize() > 10 * 1024 * 1024) {  // 10MB
+                return ResponseEntity.badRequest().body("Arquivo muito grande!");
+            }
+
+            byte[] fileBytes = curriculo.getInputStream().readAllBytes();
+            String base64 = Base64.getEncoder().encodeToString(fileBytes);
+
+            CandidaturaEvent evento = new CandidaturaEvent(
+                    vagaId,
+                    usuario.getId(),
+                    curriculo.getOriginalFilename(),
+                    base64,
+                    curriculo.getSize()
+            );
+
+            kafkaTemplate.send("candidatura-criada", evento);
+
+            return ResponseEntity.accepted()
+                    .body("Candidatura recebida! Processando currículo...");
+
+        } catch (IOException e) {
+            System.err.println("Erro ao processar arquivo: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Erro ao processar arquivo!");
+        }
     }
 
     @PutMapping("/api/candidaturas/{id}/")

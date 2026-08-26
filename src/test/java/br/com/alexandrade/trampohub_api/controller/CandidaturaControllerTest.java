@@ -8,10 +8,12 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import br.com.alexandrade.trampohub_api.enums.TipoUsuario;
+import br.com.alexandrade.trampohub_api.event.CandidaturaEvent;
 import br.com.alexandrade.trampohub_api.model.Token;
 import br.com.alexandrade.trampohub_api.model.Usuario;
 import br.com.alexandrade.trampohub_api.repository.TokenRepository;
@@ -39,6 +41,9 @@ public class CandidaturaControllerTest {
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
+
+    @MockitoBean
+    private KafkaTemplate<String, CandidaturaEvent> kafkaTemplate;
 
     @MockitoBean
     private TokenRepository tokenRepository;
