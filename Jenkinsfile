@@ -31,7 +31,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analisando qualidade do código com SonarQube...'
-                withSonarQubeEnv('SonarQube Homolog') {
+                withSonarQubeEnv('SonarQube Local') {
                     sh 'mvn sonar:sonar'
                 }
             }
