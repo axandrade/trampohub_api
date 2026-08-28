@@ -26,5 +26,8 @@ public class Usuario {
 
     private String nomeEmpresa;
 
+    @Indexed(unique = true, sparse = true)
+    private String cnpj;
+
     private String foto;
 }

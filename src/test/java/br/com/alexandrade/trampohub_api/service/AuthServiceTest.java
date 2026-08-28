@@ -56,7 +56,8 @@ class AuthServiceTest {
     void cadastroDeEmpregadorPreencheTodosOsCamposDoUsuario() {
         when(passwordEncoder.encode("123456")).thenReturn("senha-codificada");
 
-        authService.cadastrar("chefe", "123456", "empregador", "ACME Ltda", null, "chefe@example.com");
+        authService.cadastrar("chefe", "123456", "empregador", "ACME Ltda", null, "chefe@example.com",
+                "12.345.678/0001-90");
 
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
@@ -67,6 +68,7 @@ class AuthServiceTest {
         assertThat(salvo.getEmail()).isEqualTo("chefe@example.com");
         assertThat(salvo.getTipo()).isEqualTo(TipoUsuario.EMPREGADOR);
         assertThat(salvo.getNomeEmpresa()).isEqualTo("ACME Ltda");
+        assertThat(salvo.getCnpj()).isEqualTo("12345678000190");
     }
 
     @Test
@@ -74,7 +76,7 @@ class AuthServiceTest {
         when(passwordEncoder.encode("123456")).thenReturn("senha-codificada");
         when(fileStorageService.salvarFotoPerfil(any())).thenReturn("/media/perfis/foto.gif");
 
-        authService.cadastrar("joao", "123456", "candidato", null, foto(), "joao@example.com");
+        authService.cadastrar("joao", "123456", "candidato", null, foto(), "joao@example.com", null);
 
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
@@ -90,7 +92,7 @@ class AuthServiceTest {
     @Test
     void semUsernameNaoSalva() {
         FieldValidationException ex = assertThrows(FieldValidationException.class,
-                () -> authService.cadastrar(" ", "123456", "empregador", "ACME", null, null));
+                () -> authService.cadastrar(" ", "123456", "empregador", "ACME", null, null, "12345678000190"));
 
         assertThat(ex.getErrors()).containsKey("username");
         verify(usuarioRepository, never()).save(any());
@@ -101,7 +103,7 @@ class AuthServiceTest {
         when(usuarioRepository.existsByUsername("joao")).thenReturn(true);
 
         FieldValidationException ex = assertThrows(FieldValidationException.class,
-                () -> authService.cadastrar("joao", "123456", "empregador", "ACME", null, null));
+                () -> authService.cadastrar("joao", "123456", "empregador", "ACME", null, null, "12345678000190"));
 
         assertThat(ex.getErrors()).containsKey("username");
         verify(usuarioRepository, never()).save(any());
@@ -110,7 +112,7 @@ class AuthServiceTest {
     @Test
     void senhaCurtaNaoSalva() {
         FieldValidationException ex = assertThrows(FieldValidationException.class,
-                () -> authService.cadastrar("joao", "123", "empregador", "ACME", null, null));
+                () -> authService.cadastrar("joao", "123", "empregador", "ACME", null, null, "12345678000190"));
 
         assertThat(ex.getErrors()).containsKey("password");
         verify(usuarioRepository, never()).save(any());
@@ -119,7 +121,7 @@ class AuthServiceTest {
     @Test
     void tipoInvalidoNaoSalva() {
         FieldValidationException ex = assertThrows(FieldValidationException.class,
-                () -> authService.cadastrar("joao", "123456", "gerente", "ACME", null, null));
+                () -> authService.cadastrar("joao", "123456", "gerente", "ACME", null, null, "12345678000190"));
 
         assertThat(ex.getErrors()).containsKey("tipo");
         verify(usuarioRepository, never()).save(any());
@@ -128,7 +130,7 @@ class AuthServiceTest {
     @Test
     void candidatoSemFotoNaoSalva() {
         FieldValidationException ex = assertThrows(FieldValidationException.class,
-                () -> authService.cadastrar("joao", "123456", "candidato", null, null, "joao@example.com"));
+                () -> authService.cadastrar("joao", "123456", "candidato", null, null, "joao@example.com", null));
 
         assertThat(ex.getErrors()).containsKey("foto");
         verify(usuarioRepository, never()).save(any());
@@ -137,7 +139,7 @@ class AuthServiceTest {
     @Test
     void candidatoSemEmailNaoSalva() {
         FieldValidationException ex = assertThrows(FieldValidationException.class,
-                () -> authService.cadastrar("joao", "123456", "candidato", null, foto(), null));
+                () -> authService.cadastrar("joao", "123456", "candidato", null, foto(), null, null));
 
         assertThat(ex.getErrors()).containsKey("email");
         verify(usuarioRepository, never()).save(any());
@@ -147,13 +149,43 @@ class AuthServiceTest {
     void empregadorNaoPrecisaDeFotoNemEmail() {
         when(passwordEncoder.encode(anyString())).thenReturn("senha-codificada");
 
-        authService.cadastrar("chefe", "123456", "empregador", "ACME Ltda", null, null);
+        authService.cadastrar("chefe", "123456", "empregador", "ACME Ltda", null, null, "12345678000190");
 
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
         assertThat(captor.getValue().getFoto()).isNull();
         assertThat(captor.getValue().getEmail()).isNull();
         assertThat(captor.getValue().getNomeEmpresa()).isEqualTo("ACME Ltda");
+    }
+
+    @Test
+    void empregadorSemCnpjNaoSalva() {
+        FieldValidationException ex = assertThrows(FieldValidationException.class,
+                () -> authService.cadastrar("chefe", "123456", "empregador", "ACME", null, null, null));
+
+        assertThat(ex.getErrors()).containsKey("cnpj");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void empregadorComCnpjInvalidoNaoSalva() {
+        FieldValidationException ex = assertThrows(FieldValidationException.class,
+                () -> authService.cadastrar("chefe", "123456", "empregador", "ACME", null, null, "123"));
+
+        assertThat(ex.getErrors()).containsKey("cnpj");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void empregadorComCnpjDuplicadoNaoSalva() {
+        when(usuarioRepository.existsByCnpj("12345678000190")).thenReturn(true);
+
+        FieldValidationException ex = assertThrows(FieldValidationException.class,
+                () -> authService.cadastrar("chefe", "123456", "empregador", "ACME", null, null,
+                        "12.345.678/0001-90"));
+
+        assertThat(ex.getErrors()).containsKey("cnpj");
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test

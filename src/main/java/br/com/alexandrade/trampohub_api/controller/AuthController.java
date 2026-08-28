@@ -38,8 +38,9 @@ public class AuthController {
                                                        @RequestParam String tipo,
                                                        @RequestParam(name = "nome_empresa", required = false) String nomeEmpresa,
                                                        @RequestParam(required = false) MultipartFile foto,
-                                                       @RequestParam(required = false) String email) {
-        authService.cadastrar(username, password, tipo, nomeEmpresa, foto, email);
+                                                       @RequestParam(required = false) String email,
+                                                       @RequestParam(required = false) String cnpj) {
+        authService.cadastrar(username, password, tipo, nomeEmpresa, foto, email, cnpj);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new MensagemResponse("Usuário criado com sucesso."));
     }

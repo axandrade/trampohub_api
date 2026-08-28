@@ -54,7 +54,7 @@ public class AuthService {
     }
 
     public void cadastrar(String username, String password, String tipoStr, String nomeEmpresa,
-                           MultipartFile foto, String email) {
+                           MultipartFile foto, String email, String cnpj) {
         if (!StringUtils.hasText(username)) {
             throw new FieldValidationException("username", "Este campo é obrigatório.");
         }
@@ -81,12 +81,27 @@ public class AuthService {
             }
         }
 
+        String cnpjNormalizado = null;
+        if (tipo == TipoUsuario.EMPREGADOR) {
+            if (!StringUtils.hasText(cnpj)) {
+                throw new FieldValidationException("cnpj", "O CNPJ é obrigatório para empregadores.");
+            }
+            cnpjNormalizado = cnpj.replaceAll("\\D", "");
+            if (cnpjNormalizado.length() != 14) {
+                throw new FieldValidationException("cnpj", "CNPJ inválido.");
+            }
+            if (usuarioRepository.existsByCnpj(cnpjNormalizado)) {
+                throw new FieldValidationException("cnpj", "Esse CNPJ já está cadastrado.");
+            }
+        }
+
         Usuario usuario = new Usuario();
         usuario.setUsername(username);
         usuario.setPassword(passwordEncoder.encode(password));
         usuario.setEmail(email);
         usuario.setTipo(tipo);
         usuario.setNomeEmpresa(nomeEmpresa);
+        usuario.setCnpj(cnpjNormalizado);
         if (foto != null && !foto.isEmpty()) {
             usuario.setFoto(fileStorageService.salvarFotoPerfil(foto));
         }

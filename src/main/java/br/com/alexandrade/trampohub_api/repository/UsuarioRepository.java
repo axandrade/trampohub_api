@@ -13,5 +13,7 @@ public interface UsuarioRepository extends MongoRepository<Usuario, String> {
 
     boolean existsByUsername(String username);
 
+    boolean existsByCnpj(String cnpj);
+
     List<Usuario> findByIdNotAndUsername(String id, String username);
 }
