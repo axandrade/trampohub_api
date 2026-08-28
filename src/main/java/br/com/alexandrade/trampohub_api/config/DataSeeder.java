@@ -64,6 +64,8 @@ public class DataSeeder implements CommandLineRunner {
         seedVaga(alphaLog, "Analista Fiscal Freelancer",
                 "Apuracao de impostos e apoio em fechamento fiscal mensal.",
                 "Remoto", new BigDecimal("3800.00"), TipoContrato.FREELANCE, Modalidade.REMOTO);
+
+        seedCandidato("alexsandro.andrade", "teste@teste.com.br", "teste21");
     }
 
     private Usuario seedEmpregador(String username, String email, String nomeEmpresa, String cnpj) {
@@ -77,6 +79,18 @@ public class DataSeeder implements CommandLineRunner {
             usuario.setCnpj(cnpj);
             return usuarioRepository.save(usuario);
         });
+    }
+
+    private void seedCandidato(String username, String email, String password) {
+        if (usuarioRepository.existsByUsername(username)) {
+            return;
+        }
+        Usuario usuario = new Usuario();
+        usuario.setUsername(username);
+        usuario.setPassword(passwordEncoder.encode(password));
+        usuario.setEmail(email);
+        usuario.setTipo(TipoUsuario.CANDIDATO);
+        usuarioRepository.save(usuario);
     }
 
     private void seedVaga(Usuario empregador, String titulo, String descricao, String localizacao,
