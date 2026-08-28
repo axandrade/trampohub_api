@@ -28,6 +28,15 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Analisando qualidade do código com SonarQube...'
+                withSonarQubeEnv('SonarQube Homolog') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo 'Construindo imagem Docker...'
