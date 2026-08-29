@@ -9,8 +9,7 @@ RUN apt-get update && apt-get install -y \
     docker.io \
     && rm -rf /var/lib/apt/lists/*
 
-# Adicionar jenkins ao grupo docker
-RUN groupmod -g 999 docker || groupadd -g 999 docker
+# Adicionar jenkins ao grupo docker (que já existe)
 RUN usermod -aG docker jenkins
 
 USER jenkins
