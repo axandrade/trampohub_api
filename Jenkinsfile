@@ -31,8 +31,10 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analisando qualidade do código com SonarQube...'
-                withSonarQubeEnv('SonarQube Local') {
-                    sh 'mvn sonar:sonar'
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv('SonarQube Local') {
+                        sh 'mvn sonar:sonar -Dsonar.token=${SONAR_TOKEN}'
+                    }
                 }
             }
         }
