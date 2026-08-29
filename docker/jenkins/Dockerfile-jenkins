@@ -7,9 +7,16 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     docker.io \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Adicionar jenkins ao grupo docker (que já existe)
 RUN usermod -aG docker jenkins
 
-USER jenkins
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Container inicia como root para poder ajustar a permissão do
+# docker.sock montado do host; o entrypoint baixa privilégio para
+# o usuário jenkins via gosu antes de executar o Jenkins.
+ENTRYPOINT ["/entrypoint.sh"]
