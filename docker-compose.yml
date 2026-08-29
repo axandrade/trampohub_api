@@ -13,7 +13,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - JAVA_OPTS=-Xmx2048m -Xms1024m
-    user: "1000:999"
     restart: unless-stopped
     networks:
       - trampohub-network
