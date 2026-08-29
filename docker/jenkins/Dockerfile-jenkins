@@ -13,10 +13,7 @@ RUN apt-get update && apt-get install -y \
 # Adicionar jenkins ao grupo docker (que já existe)
 RUN usermod -aG docker jenkins
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Container inicia como root para poder ajustar a permissão do
 # docker.sock montado do host; o entrypoint baixa privilégio para
 # o usuário jenkins via gosu antes de executar o Jenkins.
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "if [ -S /var/run/docker.sock ]; then chmod 666 /var/run/docker.sock || true; fi; exec gosu jenkins /usr/bin/tini -- /usr/local/bin/jenkins.sh \"$@\"", "--"]
